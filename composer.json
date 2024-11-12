@@ -1,0 +1,16 @@
+{
+    "name": "pkafo/aula-luiz",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Pkafo\\AulaLuiz\\": "Classes/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Leonardo8896",
+            "email": "pkafonso8896@gmail.com"
+        }
+    ],
+    "require": {}
+}

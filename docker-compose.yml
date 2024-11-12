@@ -1,0 +1,9 @@
+services:
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/var/www/html  # Mapeamento do diretório atual para o contêiner
+    ports:
+      - "8000:80"  # Mapeamento de portas correto
