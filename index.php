@@ -16,13 +16,14 @@ $caCert = '/etc/ssl/certs/ca-certificates.crt'; // Certificado da autoridade (CA
 // Define o tipo de conteúdo da resposta como JSON
 header('Content-Type: application/json');
 
+// Tenta conectar ao banco de dados
 try {
     $conn = new PDO("mysql:host=$servername;port=$port;dbname=$dbname", $username, $password, [
         PDO::MYSQL_ATTR_SSL_CA => $caCert,
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
     ]);
 } catch (PDOException $e) {
-    echo json_encode(["success" => false, "message" => "Erro ao conectar: " . $e->getMessage()]);
+    echo json_encode(["success" => false, "message" => "Erro ao conectar ao banco de dados: " . $e->getMessage()]);
     exit;
 }
 
@@ -38,13 +39,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $weight = $_POST['weight'] ?? null;
     $gender = $_POST['gender'] ?? null;
 
-    // Verifique se todos os campos obrigatórios estão presentes
+    // Verifica se todos os campos obrigatórios estão presentes
     if (!$email || !$password || !$name || !$surname || !$age || !$height || !$weight || !$gender) {
         echo json_encode(["success" => false, "message" => "Campos obrigatórios não preenchidos."]);
         exit;
     }
 
-    // Verifique se o email já existe na base de dados
+    // Verifica se o email já existe na base de dados
     $query = "SELECT * FROM users WHERE email = :email";
     $stmt = $conn->prepare($query);
     $stmt->bindParam(':email', $email);
@@ -56,7 +57,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 
-    // Verifica se o arquivo foi enviado
+    // Depuração: Verifica o conteúdo de $_FILES
+    var_dump($_FILES);
+    exit; // Para a execução para verificar a estrutura de $_FILES
+
+    // Verifica se o arquivo foi enviado corretamente
     if (isset($_FILES['profileImage']) && $_FILES['profileImage']['error'] === UPLOAD_ERR_OK) {
         // Diretório onde as imagens serão armazenadas
         $target_dir = "uploads/";  // Ou o diretório adequado em seu servidor
@@ -118,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         }
     } else {
-        echo json_encode(["success" => false, "message" => "Arquivo não enviado ou erro no envio."]);
+        echo json_encode(["success" => false, "message" => "Arquivo não enviado ou erro no envio. Código de erro: " . $_FILES['profileImage']['error']]);
     }
 } else {
     echo json_encode(["success" => false, "message" => "Método não permitido. Apenas POST é permitido."]);
