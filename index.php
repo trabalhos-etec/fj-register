@@ -51,12 +51,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 
-    // Gera o hash da senha
-    $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-
     // Cria a query SQL para inserir no banco
-    $query = "INSERT INTO users (email, name, surname, age, profile_image, height, weight, gender, password_hash) 
-              VALUES (:email, :name, :surname, :age, :profileImage, :height, :weight, :gender, :passwordHash)";
+    $query = "INSERT INTO users (email, name, surname, age, profile_image, height, weight, gender, password) 
+              VALUES (:email, :name, :surname, :age, :profileImage, :height, :weight, :gender, :password)";
 
     // Prepara a consulta
     $stmt = $conn->prepare($query);
@@ -70,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt->bindParam(':height', $height);
     $stmt->bindParam(':weight', $weight);
     $stmt->bindParam(':gender', $gender);
-    $stmt->bindParam(':passwordHash', $passwordHash);
+    $stmt->bindParam(':password', $password);
 
     // Executa a consulta
     if ($stmt->execute()) {
