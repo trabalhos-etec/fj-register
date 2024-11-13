@@ -1,3 +1,5 @@
+header('Content-Type: application/json');
+
 // Configurações do banco de dados
 $servername = "gateway01.us-east-1.prod.aws.tidbcloud.com";
 $port = 4000;
