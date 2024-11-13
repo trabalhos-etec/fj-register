@@ -36,6 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Recebe os dados do JSON
     $email = $inputData['email'] ?? null;
+    $password = $inputData['password'] ?? null; // Recebe a senha
     $name = $inputData['name'] ?? null;
     $surname = $inputData['surname'] ?? null;
     $age = $inputData['age'] ?? null;
@@ -45,14 +46,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $gender = $inputData['gender'] ?? null;
 
     // Verifique se todos os campos obrigatórios estão presentes
-    if (!$email || !$name || !$surname || !$age || !$height || !$weight || !$gender) {
+    if (!$email || !$password || !$name || !$surname || !$age || !$height || !$weight || !$gender) {
         echo json_encode(["success" => false, "message" => "Campos obrigatórios não preenchidos."]);
         exit;
     }
 
+    // Gera o hash da senha
+    $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+
     // Cria a query SQL para inserir no banco
-    $query = "INSERT INTO users (email, name, surname, age, profile_image, height, weight, gender) 
-              VALUES (:email, :name, :surname, :age, :profileImage, :height, :weight, :gender)";
+    $query = "INSERT INTO users (email, name, surname, age, profile_image, height, weight, gender, password_hash) 
+              VALUES (:email, :name, :surname, :age, :profileImage, :height, :weight, :gender, :passwordHash)";
 
     // Prepara a consulta
     $stmt = $conn->prepare($query);
@@ -66,6 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt->bindParam(':height', $height);
     $stmt->bindParam(':weight', $weight);
     $stmt->bindParam(':gender', $gender);
+    $stmt->bindParam(':passwordHash', $passwordHash);
 
     // Executa a consulta
     if ($stmt->execute()) {
