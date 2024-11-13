@@ -1,3 +1,4 @@
+<?php
 header('Content-Type: application/json');
 
 // Configurações do banco de dados
@@ -119,3 +120,4 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 } else {
     echo json_encode(["success" => false, "message" => "Método não permitido. Apenas POST é permitido."]);
 }
+?>
