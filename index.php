@@ -1,5 +1,7 @@
 <?php
-header('Content-Type: application/json');
+// Ativa a exibição de erros
+error_reporting(E_ALL); 
+ini_set('display_errors', 1);
 
 // Configurações do banco de dados
 $servername = "gateway01.us-east-1.prod.aws.tidbcloud.com";
@@ -11,7 +13,8 @@ $dbname = "fit_journey_db";
 // Caminho para o arquivo de certificados do sistema
 $caCert = '/etc/ssl/certs/ca-certificates.crt'; // Certificado da autoridade (CA)
 
-header('Content-Type: application/json'); // Define o tipo de conteúdo da resposta como JSON
+// Define o tipo de conteúdo da resposta como JSON
+header('Content-Type: application/json');
 
 try {
     $conn = new PDO("mysql:host=$servername;port=$port;dbname=$dbname", $username, $password, [
