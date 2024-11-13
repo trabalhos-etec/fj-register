@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         // Verifica o tamanho do arquivo
-        if ($_FILES["profileImage"]["size"] > 5000000) { // Limite de 5MB
+        if ($_FILES["profileImage"]["size"] > 5000000) { 
             echo json_encode(["success" => false, "message" => "Desculpe, o arquivo é muito grande."]);
             $uploadOk = 0;
         }
