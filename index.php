@@ -1,4 +1,3 @@
-<?php
 // Configurações do banco de dados
 $servername = "gateway01.us-east-1.prod.aws.tidbcloud.com";
 $port = 4000;
@@ -23,6 +22,34 @@ try {
 
 // Verifica se os dados foram enviados via POST
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // Recupera os dados do POST
+    $email = $_POST['email'] ?? null;
+    $password = $_POST['password'] ?? null;
+    $name = $_POST['name'] ?? null;
+    $surname = $_POST['surname'] ?? null;
+    $age = $_POST['age'] ?? null;
+    $height = $_POST['height'] ?? null;
+    $weight = $_POST['weight'] ?? null;
+    $gender = $_POST['gender'] ?? null;
+
+    // Verifique se todos os campos obrigatórios estão presentes
+    if (!$email || !$password || !$name || !$surname || !$age || !$height || !$weight || !$gender) {
+        echo json_encode(["success" => false, "message" => "Campos obrigatórios não preenchidos."]);
+        exit;
+    }
+
+    // Verifique se o email já existe na base de dados
+    $query = "SELECT * FROM users WHERE email = :email";
+    $stmt = $conn->prepare($query);
+    $stmt->bindParam(':email', $email);
+    $stmt->execute();
+    $existingUser = $stmt->fetch();
+
+    if ($existingUser) {
+        echo json_encode(["success" => false, "message" => "Este email já está em uso."]);
+        exit;
+    }
+
     // Verifica se o arquivo foi enviado
     if (isset($_FILES['profileImage']) && $_FILES['profileImage']['error'] === UPLOAD_ERR_OK) {
         // Diretório onde as imagens serão armazenadas
@@ -56,23 +83,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if (move_uploaded_file($_FILES["profileImage"]["tmp_name"], $target_file)) {
                 echo json_encode(["success" => true, "message" => "O arquivo ". basename($_FILES["profileImage"]["name"]). " foi carregado com sucesso."]);
 
-                // Recupera os dados do POST
-                $email = $_POST['email'] ?? null;
-                $password = $_POST['password'] ?? null;
-                $name = $_POST['name'] ?? null;
-                $surname = $_POST['surname'] ?? null;
-                $age = $_POST['age'] ?? null;
-                $profileImage = $target_file; // Caminho da imagem
-                $height = $_POST['height'] ?? null;
-                $weight = $_POST['weight'] ?? null;
-                $gender = $_POST['gender'] ?? null;
-
-                // Verifique se todos os campos obrigatórios estão presentes
-                if (!$email || !$password || !$name || !$surname || !$age || !$height || !$weight || !$gender) {
-                    echo json_encode(["success" => false, "message" => "Campos obrigatórios não preenchidos."]);
-                    exit;
-                }
-
                 // Cria a query SQL para inserir no banco
                 $query = "INSERT INTO users (email, name, surname, age, profile_image, height, weight, gender, password) 
                           VALUES (:email, :name, :surname, :age, :profileImage, :height, :weight, :gender, :password)";
@@ -85,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $stmt->bindParam(':name', $name);
                 $stmt->bindParam(':surname', $surname);
                 $stmt->bindParam(':age', $age);
-                $stmt->bindParam(':profileImage', $profileImage); // Caminho da imagem
+                $stmt->bindParam(':profileImage', $target_file); // Caminho da imagem
                 $stmt->bindParam(':height', $height);
                 $stmt->bindParam(':weight', $weight);
                 $stmt->bindParam(':gender', $gender);
@@ -107,4 +117,3 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 } else {
     echo json_encode(["success" => false, "message" => "Método não permitido. Apenas POST é permitido."]);
 }
-?>
