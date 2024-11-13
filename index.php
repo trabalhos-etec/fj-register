@@ -9,15 +9,18 @@ $dbname = "fit_journey_db";
 // Caminho para o arquivo de certificados do sistema
 $caCert = '/etc/ssl/certs/ca-certificates.crt'; // Certificado da autoridade (CA)
 
+header('Content-Type: application/json'); // Define o tipo de conteúdo da resposta como JSON
+
 try {
     $conn = new PDO("mysql:host=$servername;port=$port;dbname=$dbname", $username, $password, [
         PDO::MYSQL_ATTR_SSL_CA => $caCert,
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
     ]);
-    echo "Conectado ao banco de dados!";
+    // Se a conexão for bem-sucedida, não faça nada. Continuamos o processo.
 } catch (PDOException $e) {
     // Trata erro de conexão
-    echo "Erro ao conectar: " . $e->getMessage();
+    echo json_encode(["success" => false, "message" => "Erro ao conectar: " . $e->getMessage()]);
+    exit;
 }
 
 // Verifica se os dados foram enviados via POST
@@ -27,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     if (json_last_error() !== JSON_ERROR_NONE) {
         // Se houver um erro na decodificação do JSON
-        echo "Erro ao decodificar JSON: " . json_last_error_msg();
+        echo json_encode(["success" => false, "message" => "Erro ao decodificar JSON: " . json_last_error_msg()]);
         exit;
     }
 
@@ -43,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Verifique se todos os campos obrigatórios estão presentes
     if (!$email || !$name || !$surname || !$age || !$height || !$weight || !$gender) {
-        echo "Campos obrigatórios não preenchidos.";
+        echo json_encode(["success" => false, "message" => "Campos obrigatórios não preenchidos."]);
         exit;
     }
 
