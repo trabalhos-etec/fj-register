@@ -22,15 +22,30 @@ try {
 
 // Verifica se os dados foram enviados via POST
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Recebe os dados
-    $email = $_POST['email'];
-    $name = $_POST['name'];
-    $surname = $_POST['surname'];
-    $age = $_POST['age'];
-    $profileImage = $_POST['profileImage']; // Aqui você pode salvar o caminho da imagem ou o conteúdo da imagem
-    $height = $_POST['height'];
-    $weight = $_POST['weight'];
-    $gender = $_POST['gender'];
+    // Lê o corpo da requisição e decodifica o JSON
+    $inputData = json_decode(file_get_contents("php://input"), true);
+
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        // Se houver um erro na decodificação do JSON
+        echo "Erro ao decodificar JSON: " . json_last_error_msg();
+        exit;
+    }
+
+    // Recebe os dados do JSON
+    $email = $inputData['email'] ?? null;
+    $name = $inputData['name'] ?? null;
+    $surname = $inputData['surname'] ?? null;
+    $age = $inputData['age'] ?? null;
+    $profileImage = $inputData['profileImage'] ?? null; // Pode ser um caminho ou URL de imagem
+    $height = $inputData['height'] ?? null;
+    $weight = $inputData['weight'] ?? null;
+    $gender = $inputData['gender'] ?? null;
+
+    // Verifique se todos os campos obrigatórios estão presentes
+    if (!$email || !$name || !$surname || !$age || !$height || !$weight || !$gender) {
+        echo "Campos obrigatórios não preenchidos.";
+        exit;
+    }
 
     // Cria a query SQL para inserir no banco
     $query = "INSERT INTO users (email, name, surname, age, profile_image, height, weight, gender) 
@@ -51,11 +66,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Executa a consulta
     if ($stmt->execute()) {
-        echo "Usuário cadastrado com sucesso!";
+        echo json_encode(["success" => true, "message" => "Usuário cadastrado com sucesso!"]);
     } else {
-        echo "Erro ao cadastrar o usuário.";
+        echo json_encode(["success" => false, "message" => "Erro ao cadastrar o usuário."]);
     }
 } else {
-    echo "Método não permitido. Apenas POST é permitido.";
+    echo json_encode(["success" => false, "message" => "Método não permitido. Apenas POST é permitido."]);
 }
 ?>
