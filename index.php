@@ -16,64 +16,93 @@ try {
         PDO::MYSQL_ATTR_SSL_CA => $caCert,
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
     ]);
-    // Se a conexão for bem-sucedida, não faça nada. Continuamos o processo.
 } catch (PDOException $e) {
-    // Trata erro de conexão
     echo json_encode(["success" => false, "message" => "Erro ao conectar: " . $e->getMessage()]);
     exit;
 }
 
 // Verifica se os dados foram enviados via POST
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Lê o corpo da requisição e decodifica o JSON
-    $inputData = json_decode(file_get_contents("php://input"), true);
+    // Verifica se o arquivo foi enviado
+    if (isset($_FILES['profileImage']) && $_FILES['profileImage']['error'] === UPLOAD_ERR_OK) {
+        // Diretório onde as imagens serão armazenadas
+        $target_dir = "uploads/";  // Ou o diretório adequado em seu servidor
+        $target_file = $target_dir . basename($_FILES["profileImage"]["name"]);
+        $uploadOk = 1;
 
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        // Se houver um erro na decodificação do JSON
-        echo json_encode(["success" => false, "message" => "Erro ao decodificar JSON: " . json_last_error_msg()]);
-        exit;
-    }
+        // Verifica se o arquivo é uma imagem real
+        $check = getimagesize($_FILES["profileImage"]["tmp_name"]);
+        if ($check !== false) {
+            $uploadOk = 1;
+        } else {
+            echo json_encode(["success" => false, "message" => "O arquivo não é uma imagem."]);
+            $uploadOk = 0;
+        }
 
-    // Recebe os dados do JSON
-    $email = $inputData['email'] ?? null;
-    $password = $inputData['password'] ?? null; // Recebe a senha
-    $name = $inputData['name'] ?? null;
-    $surname = $inputData['surname'] ?? null;
-    $age = $inputData['age'] ?? null;
-    $profileImage = $inputData['profileImage'] ?? null; // Pode ser um caminho ou URL de imagem
-    $height = $inputData['height'] ?? null;
-    $weight = $inputData['weight'] ?? null;
-    $gender = $inputData['gender'] ?? null;
+        // Verifica se o arquivo já existe
+        if (file_exists($target_file)) {
+            echo json_encode(["success" => false, "message" => "Desculpe, o arquivo já existe."]);
+            $uploadOk = 0;
+        }
 
-    // Verifique se todos os campos obrigatórios estão presentes
-    if (!$email || !$password || !$name || !$surname || !$age || !$height || !$weight || !$gender) {
-        echo json_encode(["success" => false, "message" => "Campos obrigatórios não preenchidos."]);
-        exit;
-    }
+        // Verifica o tamanho do arquivo
+        if ($_FILES["profileImage"]["size"] > 5000000) { // Limite de 5MB
+            echo json_encode(["success" => false, "message" => "Desculpe, o arquivo é muito grande."]);
+            $uploadOk = 0;
+        }
 
-    // Cria a query SQL para inserir no banco
-    $query = "INSERT INTO users (email, name, surname, age, profile_image, height, weight, gender, password) 
-              VALUES (:email, :name, :surname, :age, :profileImage, :height, :weight, :gender, :password)";
+        // Se tudo estiver ok, move o arquivo para o diretório
+        if ($uploadOk == 1) {
+            if (move_uploaded_file($_FILES["profileImage"]["tmp_name"], $target_file)) {
+                echo json_encode(["success" => true, "message" => "O arquivo ". basename($_FILES["profileImage"]["name"]). " foi carregado com sucesso."]);
 
-    // Prepara a consulta
-    $stmt = $conn->prepare($query);
-    
-    // Bind dos parâmetros
-    $stmt->bindParam(':email', $email);
-    $stmt->bindParam(':name', $name);
-    $stmt->bindParam(':surname', $surname);
-    $stmt->bindParam(':age', $age);
-    $stmt->bindParam(':profileImage', $profileImage);
-    $stmt->bindParam(':height', $height);
-    $stmt->bindParam(':weight', $weight);
-    $stmt->bindParam(':gender', $gender);
-    $stmt->bindParam(':password', $password);
+                // Recupera os dados do POST
+                $email = $_POST['email'] ?? null;
+                $password = $_POST['password'] ?? null;
+                $name = $_POST['name'] ?? null;
+                $surname = $_POST['surname'] ?? null;
+                $age = $_POST['age'] ?? null;
+                $profileImage = $target_file; // Caminho da imagem
+                $height = $_POST['height'] ?? null;
+                $weight = $_POST['weight'] ?? null;
+                $gender = $_POST['gender'] ?? null;
 
-    // Executa a consulta
-    if ($stmt->execute()) {
-        echo json_encode(["success" => true, "message" => "Usuário cadastrado com sucesso!"]);
+                // Verifique se todos os campos obrigatórios estão presentes
+                if (!$email || !$password || !$name || !$surname || !$age || !$height || !$weight || !$gender) {
+                    echo json_encode(["success" => false, "message" => "Campos obrigatórios não preenchidos."]);
+                    exit;
+                }
+
+                // Cria a query SQL para inserir no banco
+                $query = "INSERT INTO users (email, name, surname, age, profile_image, height, weight, gender, password) 
+                          VALUES (:email, :name, :surname, :age, :profileImage, :height, :weight, :gender, :password)";
+
+                // Prepara a consulta
+                $stmt = $conn->prepare($query);
+
+                // Bind dos parâmetros
+                $stmt->bindParam(':email', $email);
+                $stmt->bindParam(':name', $name);
+                $stmt->bindParam(':surname', $surname);
+                $stmt->bindParam(':age', $age);
+                $stmt->bindParam(':profileImage', $profileImage); // Caminho da imagem
+                $stmt->bindParam(':height', $height);
+                $stmt->bindParam(':weight', $weight);
+                $stmt->bindParam(':gender', $gender);
+                $stmt->bindParam(':password', $password);
+
+                // Executa a consulta
+                if ($stmt->execute()) {
+                    echo json_encode(["success" => true, "message" => "Usuário cadastrado com sucesso!"]);
+                } else {
+                    echo json_encode(["success" => false, "message" => "Erro ao cadastrar o usuário."]);
+                }
+            } else {
+                echo json_encode(["success" => false, "message" => "Desculpe, houve um erro ao carregar o arquivo."]);
+            }
+        }
     } else {
-        echo json_encode(["success" => false, "message" => "Erro ao cadastrar o usuário."]);
+        echo json_encode(["success" => false, "message" => "Arquivo não enviado ou erro no envio."]);
     }
 } else {
     echo json_encode(["success" => false, "message" => "Método não permitido. Apenas POST é permitido."]);
