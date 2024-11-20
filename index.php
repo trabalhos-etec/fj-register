@@ -2,6 +2,8 @@
 // Ativa a exibição de erros
 error_reporting(E_ALL); 
 ini_set('display_errors', 1);
+ini_set('upload_max_filesize', '10M');
+ini_set('post_max_size', '10M');
 
 // Configurações do banco de dados
 $servername = "gateway01.us-east-1.prod.aws.tidbcloud.com";
@@ -57,75 +59,47 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 
-    // Depuração: Verifica o conteúdo de $_FILES
-    var_dump($_FILES);
-    exit; // Para a execução para verificar a estrutura de $_FILES
-
     // Verifica se o arquivo foi enviado corretamente
     if (isset($_FILES['profileImage']) && $_FILES['profileImage']['error'] === UPLOAD_ERR_OK) {
-        // Diretório onde as imagens serão armazenadas
-        $target_dir = "uploads/";  // Ou o diretório adequado em seu servidor
-        $target_file = $target_dir . basename($_FILES["profileImage"]["name"]);
-        $uploadOk = 1;
-
-        // Verifica se o arquivo é uma imagem real
-        $check = getimagesize($_FILES["profileImage"]["tmp_name"]);
-        if ($check !== false) {
-            $uploadOk = 1;
-        } else {
-            echo json_encode(["success" => false, "message" => "O arquivo não é uma imagem."]);
-            $uploadOk = 0;
-        }
-
-        // Verifica se o arquivo já existe
-        if (file_exists($target_file)) {
-            echo json_encode(["success" => false, "message" => "Desculpe, o arquivo já existe."]);
-            $uploadOk = 0;
-        }
+        // Lê o conteúdo do arquivo como BLOB
+        $profileImageData = file_get_contents($_FILES['profileImage']['tmp_name']);
 
         // Verifica o tamanho do arquivo
-        if ($_FILES["profileImage"]["size"] > 5000000) { 
+        if ($_FILES['profileImage']['size'] > 5000000) { 
             echo json_encode(["success" => false, "message" => "Desculpe, o arquivo é muito grande."]);
-            $uploadOk = 0;
+            exit;
         }
 
-        // Se tudo estiver ok, move o arquivo para o diretório
-        if ($uploadOk == 1) {
-            if (move_uploaded_file($_FILES["profileImage"]["tmp_name"], $target_file)) {
-                echo json_encode(["success" => true, "message" => "O arquivo ". basename($_FILES["profileImage"]["name"]). " foi carregado com sucesso."]);
+        // Cria a query SQL para inserir no banco, agora com o BLOB
+        $query = "INSERT INTO users (email, name, surname, age, profile_image, height, weight, gender, password) 
+                  VALUES (:email, :name, :surname, :age, :profileImage, :height, :weight, :gender, :password)";
 
-                // Cria a query SQL para inserir no banco
-                $query = "INSERT INTO users (email, name, surname, age, profile_image, height, weight, gender, password) 
-                          VALUES (:email, :name, :surname, :age, :profileImage, :height, :weight, :gender, :password)";
+        // Prepara a consulta
+        $stmt = $conn->prepare($query);
 
-                // Prepara a consulta
-                $stmt = $conn->prepare($query);
+        // Bind dos parâmetros
+        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':name', $name);
+        $stmt->bindParam(':surname', $surname);
+        $stmt->bindParam(':age', $age);
+        $stmt->bindParam(':profileImage', $profileImageData, PDO::PARAM_LOB); // BLOB
+        $stmt->bindParam(':height', $height);
+        $stmt->bindParam(':weight', $weight);
+        $stmt->bindParam(':gender', $gender);
+        $stmt->bindParam(':password', $password);
 
-                // Bind dos parâmetros
-                $stmt->bindParam(':email', $email);
-                $stmt->bindParam(':name', $name);
-                $stmt->bindParam(':surname', $surname);
-                $stmt->bindParam(':age', $age);
-                $stmt->bindParam(':profileImage', $target_file); // Caminho da imagem
-                $stmt->bindParam(':height', $height);
-                $stmt->bindParam(':weight', $weight);
-                $stmt->bindParam(':gender', $gender);
-                $stmt->bindParam(':password', $password);
-
-                // Executa a consulta
-                if ($stmt->execute()) {
-                    echo json_encode(["success" => true, "message" => "Usuário cadastrado com sucesso!"]);
-                } else {
-                    echo json_encode(["success" => false, "message" => "Erro ao cadastrar o usuário."]);
-                }
-            } else {
-                echo json_encode(["success" => false, "message" => "Desculpe, houve um erro ao carregar o arquivo."]);
-            }
+        // Executa a consulta
+        if ($stmt->execute()) {
+            echo json_encode(["success" => true, "message" => "Usuário cadastrado com sucesso!"]);
+        } else {
+            echo json_encode(["success" => false, "message" => "Erro ao cadastrar o usuário."]);
         }
     } else {
+        // Mostra o código do erro do arquivo
         echo json_encode(["success" => false, "message" => "Arquivo não enviado ou erro no envio. Código de erro: " . $_FILES['profileImage']['error']]);
     }
 } else {
     echo json_encode(["success" => false, "message" => "Método não permitido. Apenas POST é permitido."]);
 }
 ?>
+
