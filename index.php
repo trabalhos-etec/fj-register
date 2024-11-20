@@ -7,7 +7,7 @@ $password = "MwpaUDqIBb2157HN";
 $dbname = "fit_journey_db";
 
 // Caminho para o arquivo de certificados do sistema
-$caCert = '/etc/ssl/certs/ca-certificates.crt'; // Certificado da autoridade (CA)
+$caCert = '/ca_cert/isrgrootx1.pem'; // Certificado da autoridade (CA)
 
 header('Content-Type: application/json'); // Define o tipo de conteúdo da resposta como JSON
 
